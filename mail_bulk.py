@@ -8,8 +8,7 @@ def send_gmail_bulk_message():
     recipient_email = st.text_input("Enter recipient's email address:")
     subject = st.text_input("Enter the subject of the email:")
     message = st.text_area("Enter your message:")
-    sender_email = st.text_input("Enter your Gmail address:")
-    sender_password = st.text_input("Enter your Gmail app password:", type="password")
+    file = st.file_uploader(label="Upload a CSV file with recipient emails", type=["csv"],accept_multiple_files=False,label_visibility="visible",)
     sender_email = "rupsaisr@gmail.com"
     sender_password = "phhc fdmy tlbk wppk"
 

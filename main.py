@@ -12,7 +12,7 @@ st.set_page_config(
 st.sidebar.title("Select your application")
 app = st.sidebar.selectbox(
     "Select Application",
-    options=["WhatsApp", "GMail"],
+    options=["WhatsApp", "GMail","GmailBulk"],
     index=0
 )
 
@@ -42,18 +42,6 @@ with st.sidebar:
         - Unstable internet connection
         """)
     
-
-
-
-
-
-
-
-
-
-
-
-
 
 if app == "WhatsApp":
     send_whatsapp_message()
