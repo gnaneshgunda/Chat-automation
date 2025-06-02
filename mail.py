@@ -10,8 +10,6 @@ def send_gmail_message():
     message = st.text_area("Enter your message:")
     sender_email = st.text_input("Enter your Gmail address:")
     sender_password = st.text_input("Enter your Gmail app password:", type="password")
-    sender_email = "rupsaisr@gmail.com"
-    sender_password = "phhc fdmy tlbk wppk"
 
     if st.button("Send GMail Message"):
         if recipient_email and subject and message and sender_email and sender_password:
