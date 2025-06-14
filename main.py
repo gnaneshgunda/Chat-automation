@@ -209,6 +209,377 @@ def validate_phone_number(number):
         """)
     
 
+# from datetime import datetime, timedelta
+# import time
+# from selenium import webdriver
+# from selenium.webdriver.common.by import By
+# from selenium.webdriver.chrome.options import Options
+# from selenium.webdriver.support.ui import WebDriverWait
+# from selenium.webdriver.support import expected_conditions as EC
+# from selenium.common.exceptions import TimeoutException, NoSuchElementException
+# import os
+
+# def launch_driver():
+#     options = Options()
+    
+#     # Simple Chrome options without user data directory
+#     options.add_argument("--no-sandbox")
+#     options.add_argument("--disable-dev-shm-usage")
+#     options.add_argument("--disable-gpu")
+#     options.add_argument("--disable-extensions")
+#     options.add_argument("--disable-plugins")
+#     options.add_argument("--disable-web-security")
+#     options.add_argument("--allow-running-insecure-content")
+#     options.add_argument("--disable-background-timer-throttling")
+#     options.add_argument("--disable-backgrounding-occluded-windows")
+#     options.add_argument("--disable-renderer-backgrounding")
+#     options.add_argument("--disable-features=TranslateUI")
+#     options.add_argument("--disable-ipc-flooding-protection")
+    
+#     # Window options
+#     options.add_argument("--start-maximized")
+#     options.add_argument("--window-size=1920,1080")
+    
+#     # Use incognito mode to avoid conflicts
+#     options.add_argument("--incognito")
+    
+#     # Additional stability options with random port
+#     import random
+#     debug_port = random.randint(9000, 9999)
+#     options.add_argument(f"--remote-debugging-port={debug_port}")
+#     options.add_argument("--disable-blink-features=AutomationControlled")
+#     options.add_experimental_option("excludeSwitches", ["enable-automation"])
+#     options.add_experimental_option('useAutomationExtension', False)
+    
+#     # Prefs to disable notifications and popups
+#     prefs = {
+#         "profile.default_content_setting_values.notifications": 2,
+#         "profile.default_content_settings.popups": 0,
+#         "profile.managed_default_content_settings.images": 2
+#     }
+#     options.add_experimental_option("prefs", prefs)
+    
+#     try:
+#         driver = webdriver.Chrome(options=options)
+#         driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+#         driver.get("https://web.whatsapp.com")
+#         st.success("✅ Chrome launched successfully in incognito mode!")
+#         st.warning("⚠️ You'll need to scan the QR code to log into WhatsApp Web")
+#         return driver
+#     except Exception as e:
+#         st.error(f"Failed to launch Chrome: {str(e)}")
+        
+#         # Try even more basic options
+#         st.info("Trying with minimal options...")
+#         try:
+#             basic_options = Options()
+#             basic_options.add_argument("--no-sandbox")
+#             basic_options.add_argument("--disable-dev-shm-usage")
+            
+#             driver = webdriver.Chrome(options=basic_options)
+#             driver.get("https://web.whatsapp.com")
+#             st.warning("⚠️ Basic mode - scan QR code to login")
+#             return driver
+#         except Exception as e2:
+#             st.error(f"Even basic launch failed: {str(e2)}")
+#             st.error("**MANUAL FIX REQUIRED:**")
+#             st.write("1. **Open Task Manager** (Ctrl+Shift+Esc)")
+#             st.write("2. **End ALL chrome.exe processes**")
+#             st.write("3. **Close all Chrome windows completely**")
+#             st.write("4. **Delete any WhatsApp_UserData_* folders** in your project directory")
+#             st.write("5. **Try running the script again**")
+#             st.write("6. **If still failing, restart your computer**")
+#             raise
+
+# def send_message(driver, phone_number, message):
+#     try:
+#         # Open chat via wa.me link
+#         link = f"https://wa.me/{phone_number[1:]}"  # remove "+" from phone number
+#         st.info(f"Opening WhatsApp link: {link}")
+#         driver.get(link)
+        
+#         # Wait for page to load
+#         wait = WebDriverWait(driver, 20)
+#         time.sleep(3)
+        
+#         # Try multiple ways to find and click "Continue to Chat" button
+#         continue_clicked = False
+#         continue_selectors = [
+#             (By.LINK_TEXT, "Continue to Chat"),
+#             (By.PARTIAL_LINK_TEXT, "Continue"),
+#             (By.PARTIAL_LINK_TEXT, "Chat"),
+#             (By.XPATH, "//a[contains(text(), 'Continue')]"),
+#             (By.XPATH, "//a[contains(text(), 'Chat')]"),
+#             (By.CSS_SELECTOR, "a[href*='web.whatsapp.com']")
+#         ]
+        
+#         for selector_type, selector_value in continue_selectors:
+#             try:
+#                 continue_btn = wait.until(EC.element_to_be_clickable((selector_type, selector_value)))
+#                 continue_btn.click()
+#                 st.success("✅ Clicked 'Continue to Chat'")
+#                 continue_clicked = True
+#                 break
+#             except TimeoutException:
+#                 continue
+        
+#         if not continue_clicked:
+#             st.warning("Could not find 'Continue to Chat' button, trying direct WhatsApp Web...")
+#             driver.get("https://web.whatsapp.com")
+#             time.sleep(5)
+        
+#         time.sleep(3)
+        
+#         # Try to find WhatsApp Web button
+#         web_clicked = False
+#         if continue_clicked:
+#             web_selectors = [
+#                 (By.LINK_TEXT, "use WhatsApp Web"),
+#                 (By.PARTIAL_LINK_TEXT, "WhatsApp Web"),
+#                 (By.PARTIAL_LINK_TEXT, "Web"),
+#                 (By.XPATH, "//a[contains(text(), 'Web')]"),
+#                 (By.CSS_SELECTOR, "a[href*='web.whatsapp.com']")
+#             ]
+            
+#             for selector_type, selector_value in web_selectors:
+#                 try:
+#                     web_btn = wait.until(EC.element_to_be_clickable((selector_type, selector_value)))
+#                     web_btn.click()
+#                     st.success("✅ Clicked 'WhatsApp Web'")
+#                     web_clicked = True
+#                     break
+#                 except TimeoutException:
+#                     continue
+        
+#         # Wait for WhatsApp Web to load
+#         time.sleep(8)
+        
+#         # If we have a phone number, try to search for the contact
+#         if not web_clicked and continue_clicked:
+#             try:
+#                 # Try to find search box and search for the number
+#                 search_selectors = [
+#                     (By.XPATH, "//div[@contenteditable='true'][@data-tab='3']"),
+#                     (By.XPATH, "//div[@title='Search input textbox']"),
+#                     (By.CSS_SELECTOR, "div[contenteditable='true'][data-tab='3']")
+#                 ]
+                
+#                 for selector_type, selector_value in search_selectors:
+#                     try:
+#                         search_box = wait.until(EC.element_to_be_clickable((selector_type, selector_value)))
+#                         search_box.click()
+#                         search_box.clear()
+#                         search_box.send_keys(phone_number)
+#                         time.sleep(2)
+                        
+#                         # Click on first result
+#                         first_result = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "div[data-testid='cell-frame-container']")))
+#                         first_result.click()
+#                         st.success("✅ Found contact via search")
+#                         break
+#                     except TimeoutException:
+#                         continue
+#             except:
+#                 pass
+
+#         # Now try to find message box with multiple selectors
+#         message_selectors = [
+#             (By.XPATH, "//div[@title='Type a message']"),
+#             (By.XPATH, "//div[@data-tab='10']"),
+#             (By.XPATH, "//div[@contenteditable='true'][@data-tab='10']"),
+#             (By.CSS_SELECTOR, "div[contenteditable='true'][data-tab='10']"),
+#             (By.CSS_SELECTOR, "div[title='Type a message']"),
+#             (By.XPATH, "//div[contains(@class, 'copyable-text')][@contenteditable='true']")
+#         ]
+        
+#         msg_box = None
+#         for selector_type, selector_value in message_selectors:
+#             try:
+#                 msg_box = wait.until(EC.presence_of_element_located((selector_type, selector_value)))
+#                 st.success("✅ Found message box")
+#                 break
+#             except TimeoutException:
+#                 continue
+        
+#         if not msg_box:
+#             # Take screenshot for debugging
+#             driver.save_screenshot("whatsapp_error.png")
+#             return False, "Could not find message input box. Screenshot saved as 'whatsapp_error.png'"
+        
+#         # Clear and type message
+#         msg_box.click()
+#         time.sleep(1)
+#         msg_box.clear()
+#         msg_box.send_keys(message)
+#         time.sleep(1)
+        
+#         # Find and click send button with multiple selectors
+#         send_selectors = [
+#             (By.XPATH, "//button[@aria-label='Send']"),
+#             (By.XPATH, "//span[@data-testid='send']"),
+#             (By.CSS_SELECTOR, "button[aria-label='Send']"),
+#             (By.XPATH, "//button[contains(@class, 'compose-btn-send')]"),
+#             (By.XPATH, "//div[@role='button'][@aria-label='Send']")
+#         ]
+        
+#         send_btn = None
+#         for selector_type, selector_value in send_selectors:
+#             try:
+#                 send_btn = wait.until(EC.element_to_be_clickable((selector_type, selector_value)))
+#                 break
+#             except TimeoutException:
+#                 continue
+        
+#         if not send_btn:
+#             return False, "Could not find send button"
+        
+#         send_btn.click()
+#         time.sleep(2)  # Wait for message to be sent
+#         st.success("✅ Message sent successfully")
+#         return True, ""
+        
+#     except TimeoutException as e:
+#         driver.save_screenshot("timeout_error.png")
+#         return False, f"Timeout waiting for element. Screenshot saved. Error: {str(e)}"
+#     except NoSuchElementException as e:
+#         driver.save_screenshot("element_not_found.png")
+#         return False, f"Element not found. Screenshot saved. Error: {str(e)}"
+#     except Exception as e:
+#         driver.save_screenshot("general_error.png")
+#         return False, f"General error. Screenshot saved. Error: {str(e)}"
+
+# def validate_phone_number(number):
+#     if not number.startswith('+'):
+#         return False, "Must start with country code (+)"
+#     if not number[1:].isdigit():
+#         return False, "Digits only after '+'"
+#     if len(number[1:]) < 10 or len(number[1:]) > 15:
+#         return False, "Length should be 10–15 digits"
+#     return True, "Valid"
+
+# def send_whatsapp_message():
+#     st.title("📤 WhatsApp Message Sender (Selenium)")
+#     st.info("Make sure WhatsApp Web is logged in on your browser.")
+
+#     input_numbers = st.text_area(
+#         "Enter phone numbers (one per line, with country code, e.g., +1234567890):",
+#         placeholder="+1234567890\n+9876543210"
+#     )
+
+#     message = st.text_area("Enter your message:")
+
+#     col1, col2 = st.columns(2)
+#     with col1:
+#         hour = st.number_input("Hour (24h)", 0, 23, value=datetime.now().hour)
+#     with col2:
+#         minute = st.number_input("Minute", 0, 59, value=(datetime.now().minute + 2) % 60)
+
+#     numbers_list = [num.strip() for num in input_numbers.splitlines() if num.strip()]
+
+#     if st.button("Send Message", type="primary"):
+#         if not numbers_list:
+#             st.error("Enter at least one phone number.")
+#             return
+#         if not message.strip():
+#             st.error("Message can't be empty.")
+#             return
+
+#         now = datetime.now()
+#         scheduled = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+#         if scheduled <= now:
+#             scheduled = scheduled + timedelta(days=1)  # Schedule for next day if time has passed
+            
+#         wait_time = (scheduled - now).total_seconds()
+        
+#         if wait_time > 0:
+#             st.success(f"⏳ Waiting {int(wait_time)} seconds until scheduled time...")
+            
+#             # Create a progress bar for waiting time
+#             wait_progress = st.progress(0)
+#             wait_status = st.empty()
+            
+#             for i in range(int(wait_time)):
+#                 wait_progress.progress((i + 1) / wait_time)
+#                 remaining = int(wait_time - i)
+#                 wait_status.text(f"Waiting... {remaining} seconds remaining")
+#                 time.sleep(1)
+            
+#             wait_status.text("Starting to send messages...")
+
+#         try:
+#             driver = launch_driver()
+#             st.info("Waiting for WhatsApp Web to load... Please ensure you're logged in.")
+#             time.sleep(15)  # Give time to load WhatsApp Web
+
+#             success = 0
+#             fail = 0
+#             progress = st.progress(0)
+#             status = st.empty()
+
+#             for i, number in enumerate(numbers_list):
+#                 status.text(f"Sending to {number}...")
+#                 valid, msg = validate_phone_number(number)
+#                 if not valid:
+#                     st.error(f"{number}: {msg}")
+#                     fail += 1
+#                 else:
+#                     ok, error = send_message(driver, number, message)
+#                     if ok:
+#                         st.success(f"✅ Sent to {number}")
+#                         success += 1
+#                     else:
+#                         st.error(f"❌ Failed to send to {number}: {error}")
+#                         fail += 1
+
+#                 progress.progress((i + 1) / len(numbers_list))
+#                 if i < len(numbers_list) - 1:
+#                     time.sleep(3)  # Wait between messages
+
+#             status.text("✅ Done")
+#             st.write("### Summary")
+#             st.write(f"✅ Sent: {success}")
+#             st.write(f"❌ Failed: {fail}")
+            
+#         except Exception as e:
+#             st.error(f"Driver error: {str(e)}")
+#             st.write("### Troubleshooting Steps:")
+#             st.write("1. **Close all Chrome windows** and try again")
+#             st.write("2. **Delete User_Data folder** if it exists in your project directory")
+#             st.write("3. **Update ChromeDriver**: Download from https://chromedriver.chromium.org/")
+#             st.write("4. **Check Chrome version**: chrome://version in browser")
+#             st.write("5. **Run as administrator** if on Windows")
+#             st.write("6. **Disable antivirus** temporarily")
+#             st.write("7. **Try headless mode** by adding `--headless` option")
+#         finally:
+#             try:
+#                 if 'driver' in locals():
+#                     driver.quit()
+#             except:
+#                 pass
+
+# # Sidebar
+# with st.sidebar:
+#     st.header("📋 Instructions")
+#     st.write("""
+#     1. Ensure WhatsApp Web is logged in.
+#     2. Enter full international phone numbers.
+#     3. Enter message and time (2+ mins ahead).
+#     4. Keep this app and browser open until done.
+#     5. Make sure Chrome browser is installed.
+#     """)
+    
+#     st.header("⚠️ Troubleshooting")
+#     st.write("""
+#     - If elements aren't found, WhatsApp may have updated their interface
+#     - Ensure stable internet connection
+#     - Don't interact with the browser while sending
+#     - Close other Chrome instances if issues occur
+#     """)
+
+
+
+
+
 
 
 
