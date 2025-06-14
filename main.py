@@ -129,22 +129,24 @@ def send_whatsapp_message():
                         continue
                     
                     # Send message with pywhatkit
-                    pwk.sendwhatmsg(
-                        phone_no=number, 
-                        message=message, 
-                        time_hour=hour, 
-                        time_min=minute,
-                        wait_time=15,  # Wait time for WhatsApp web to load
-                        tab_close=True,
-                        close_time=3   # Time before closing tab
-                    )
-                    # pwk.sendwhatmsg_instantly(
-                    # phone_no=number,
-                    # message=message,
-                    # wait_time=15,     # Time in seconds to wait for WhatsApp Web to load
-                    # tab_close=True,   # Whether to close the tab after sending
-                    # close_time=3      # Seconds to wait before closing tab after sending
-                    # )
+                    if i==0:
+                       pwk.sendwhatmsg(
+                           phone_no=number, 
+                           message=message, 
+                           time_hour=hour, 
+                           time_min=minute,
+                           wait_time=15,  # Wait time for WhatsApp web to load
+                           tab_close=True,
+                            close_time=3   # Time before closing tab
+                        )
+                    else:
+                       pwk.sendwhatmsg_instantly(
+                          phone_no=number,
+                          message=message,
+                          wait_time=15,     # Time in seconds to wait for WhatsApp Web to load
+                          tab_close=True,   # Whether to close the tab after sending
+                          close_time=3      # Seconds to wait before closing tab after sending
+                           )
 
 
                     
