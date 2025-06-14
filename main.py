@@ -115,8 +115,10 @@ def send_whatsapp_message():
             
             success_count = 0
             error_count = 0
-            
+            time_taken=0
             for i, number in enumerate(numbers_list):
+                start_time=time.time()
+                
                 try:
                     status_text.text(f"📤 Sending message to {number}...")
                     
@@ -136,6 +138,15 @@ def send_whatsapp_message():
                         tab_close=True,
                         close_time=3   # Time before closing tab
                     )
+                    # pwk.sendwhatmsg_instantly(
+                    # phone_no=number,
+                    # message=message,
+                    # wait_time=15,     # Time in seconds to wait for WhatsApp Web to load
+                    # tab_close=True,   # Whether to close the tab after sending
+                    # close_time=3      # Seconds to wait before closing tab after sending
+                    # )
+
+
                     
                     st.success(f"✅ Message scheduled to be sent to {number} at {hour:02d}:{minute:02d}")
                     success_count += 1
@@ -150,6 +161,11 @@ def send_whatsapp_message():
                 
                 # Update progress
                 progress_bar.progress((i + 1) / len(numbers_list))
+                minute+=1
+                if minute>=60 :
+                    minute-=60
+                    hour+=1
+                time_taken+=(time.time()-start_time)
             
             # Final status
             status_text.text("✅ Process completed!")
