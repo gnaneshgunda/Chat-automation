@@ -5,38 +5,49 @@ from whats.whatsutils import send_whatsapp_message as sendmsg
 from selenium import webdriver
 
 def send_whatsapp_message():
-    st.title("WhatsApp Message Sender")
+    st.title("🟢 WhatsApp Single Message Sender")
     
-    # Instructions for users
-    st.info("📱 Make sure WhatsApp Web is logged in on your default browser before sending messages.")
     
+    
+    # Main input section
+    st.subheader("📝 Message Details")
     input_number = st.text_input(
-        "Enter Phone Number (with country code, e.g., +1234567890):",
-        placeholder="+1234567890"
+        "📱 Phone Number",
+        placeholder="+1234567890",
+        help="Enter the full phone number including country code (e.g., +1 for USA, +91 for India)"
     )
-    message = st.text_area(
-        "Enter Your Message:",
-        placeholder="Type your message here...",
-        height=150
-    )
-    
 
-    col1, col2 = st.columns(2)
-    with col1:
-        hour = st.number_input(
-            "Hour (24-hour format):", 
-            min_value=0, 
-            max_value=23, 
-            value=datetime.now().hour
-        )
-    with col2:
+    message = st.text_area(
+        "✍️ Your Message",
+        placeholder="Type your message here...",
+        height=150,
+        help="Enter the message you want to send. You can use multiple lines."
+    )
+
+    # Scheduling section
+    st.subheader("⏰ Schedule Message")
+    with st.container():
+        st.caption("Select the time when you want your message to be sent")
+        col1, col2 = st.columns(2)
         
-        minute = st.number_input(
-            "Minute:", 
-            min_value=0, 
-            max_value=59, 
-            value=(datetime.now().minute + 3) % 60  # Add 3 minute buffer
-        )
+        with col1:
+            hour = st.number_input(
+                "Hour (24-hour format)", 
+                min_value=0, 
+                max_value=23, 
+                value=datetime.now().hour,
+                help="Enter hour in 24-hour format (0-23)"
+            )
+        with col2:
+            minute = st.number_input(
+                "Minute", 
+                min_value=0, 
+                max_value=59, 
+                value=(datetime.now().minute + 3) % 60,
+                help="Enter minute (0-59)"
+            )
+
+        st.info(f"Message will be sent at {hour:02d}:{minute:02d}")
 
     st.write(f"{input_number} will be used to send the message at the scheduled time.")
 
