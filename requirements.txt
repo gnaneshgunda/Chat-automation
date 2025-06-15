@@ -1,2 +1,5 @@
 streamlit
-pywhatkit
+pandas
+selenium
+smtplib
+email

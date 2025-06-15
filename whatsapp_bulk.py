@@ -49,30 +49,48 @@ def send_whatsapp_bulk_message():
     st.write("You can use {} in the template file to personalize the message.")
     if file is not None:
         filedata = pd.read_csv(file)
+        st.dataframe(filedata.head(7))  # Display the first few rows of the uploaded CSV
         columns = filedata.columns.tolist()
         memo = {}
-        isitname = st.checkbox("Will you use names or phone number for contact identification?", help="If checked, names will be used instead of phone numbers (NOT RECOMMENDED)", value=False)
+        isitname = st.checkbox("Will you use names for contact identification? default is phone number", help="If checked, names will be used instead of phone numbers (NOT RECOMMENDED)", value=False)
         phonecolumn = st.selectbox(f"Select the column containing {'names' if isitname else 'phone numbers'}", options=columns, index=0)
+        st.markdown("---")
         for i in range(len(columns)):
             columns[i] = columns[i].strip().lower()
+            st.dataframe(filedata[columns[i]].head(2))  # Display the first few rows of each column
             text = st.text_input(f"Enter column description for '{columns[i]}' leave it as it is to keep default and not use it feel free to delete it", value=columns[i])
+            st.markdown("---")  # This adds a solid horizontal line in Streamlit
             if text:
                 memo[columns[i]] = text
 
         filedata.columns = columns
         filedata = filedata.dropna(subset=[phonecolumn])  # Ensure selected column exists and is not empty
             
-
+    if template is not None:
+        message_template = template.read().decode('utf-8')
+    else:
+        st.error("Please upload a template file.")
+        return
+    if not file or not message_template:
+        st.error("Please upload both a CSV file and a template file.")
+        return
+    st.markdown("---")
+    
+    personalized_message = message_template
+    row = filedata.iloc[0]  
+    for key, value in memo.items():
+        if value.strip():
+            if key in row:
+                personalized_message = personalized_message.replace(f'{{{value}}}', str(row[key]))
+    st.subheader("📋 Message Preview")
+    st.write("This is how your message will look like when sent:")
+    st.markdown(f"```\n{personalized_message}\n```")
             
 
     if st.button("Send WhatsApp Bulk Message", type="primary"):
         starttime = time.time()
         
-        if template is not None:
-            message_template = template.read().decode('utf-8')
-        else:
-            st.error("Please upload a template file.")
-            return
+        
 
         if message_template:
             try:
