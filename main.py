@@ -118,6 +118,9 @@ def send_whatsapp_message():
             time_taken=0
             for i, number in enumerate(numbers_list):
                 start_time=time.time()
+                if not (validate_phone_number(number))[0]:
+                    continue
+                
                 
                 try:
                     status_text.text(f"📤 Sending message to {number}...")
