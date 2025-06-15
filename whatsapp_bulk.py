@@ -51,15 +51,16 @@ def send_whatsapp_bulk_message():
         filedata = pd.read_csv(file)
         columns = filedata.columns.tolist()
         memo = {}
-        phonecolumn = st.selectbox("Select the column containing phone numbers", options=columns, index=0)
+        isitname = st.checkbox("Will you use names or phone number for contact identification?", help="If checked, names will be used instead of phone numbers (NOT RECOMMENDED)", value=False)
+        phonecolumn = st.selectbox(f"Select the column containing {'names' if isitname else 'phone numbers'}", options=columns, index=0)
         for i in range(len(columns)):
             columns[i] = columns[i].strip().lower()
-            text = st.text_input(f"Enter column description for '{columns[i]}' leave it empty to keep default", value=columns[i])
+            text = st.text_input(f"Enter column description for '{columns[i]}' leave it as it is to keep default and not use it feel free to delete it", value=columns[i])
             if text:
                 memo[columns[i]] = text
 
         filedata.columns = columns
-        filedata = filedata.dropna(subset=[phonecolumn])  # Ensure 'phone' column exists and is not empty
+        filedata = filedata.dropna(subset=[phonecolumn])  # Ensure selected column exists and is not empty
             
 
             
@@ -84,12 +85,15 @@ def send_whatsapp_bulk_message():
                 for _, row in filedata.iterrows():
                     totalcount += 1
                     recipient_phone = str(row[phonecolumn]).strip()
-                    if not recipient_phone.startswith('+'):
-                        recipient_phone = '+91' + recipient_phone
+                    # Only format phone number if not using names
+                    if not isitname:
+                        if not recipient_phone.startswith('+'):
+                            recipient_phone = '+91' + recipient_phone
                     personalized_message = message_template
                     for key, value in memo.items():
-                        if key in row:
-                            personalized_message = personalized_message.replace(f'{{{value}}}', str(row[key]))
+                        if value.strip():
+                            if key in row:
+                                personalized_message = personalized_message.replace(f'{{{value}}}', str(row[key]))
 
                     if sendmsg(webd, recipient_phone, personalized_message):
                         st.success(f"Message sent to {recipient_phone}.")
