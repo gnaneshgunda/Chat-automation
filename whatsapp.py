@@ -69,9 +69,12 @@ def send_whatsapp_message():
                 webd.maximize_window()
                 webd.implicitly_wait(100)
                 time.sleep(10)
-                while  time.localtime().tm_hour != hour or time.localtime().tm_min != minute:
-                    time.sleep(10)  # Wait until the scheduled time
-                if sendmsg(webd,input_number, message):
+                while time.localtime().tm_hour != hour or time.localtime().tm_min != minute:
+                    current_time = time.time()
+                    target_time = datetime.now().replace(hour=hour, minute=minute, second=0, microsecond=0).timestamp()
+                    sleep_duration = max(1, min(10, target_time - current_time))
+                    time.sleep(sleep_duration)  # Dynamically adjust sleep interval
+                if sendmsg(webd, input_number, message):
                     time.sleep(10)  # Wait for message to be sent
                     webd.quit()  # Close the browser after sending
                     st.success(f"✅ Message sent to {input_number} at {hour:02d}:{minute:02d}")
