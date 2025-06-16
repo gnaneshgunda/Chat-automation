@@ -23,6 +23,7 @@ def send_whatsapp_message(webd,phone_no, message):
         input_box.send_keys('\n')
         time.sleep(0.5)
     except Exception as e:
+        logging.error("An error occurred while sending the WhatsApp message", exc_info=True)
         return False
     return True
 
