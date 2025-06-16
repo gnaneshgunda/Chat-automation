@@ -57,7 +57,7 @@ def send_whatsapp_bulk_message():
         phonecolumn = st.selectbox(f"Select the column containing {'names' if isitname else 'phone numbers'}", options=columns, index=0)
         st.markdown("---")
         for i in range(len(columns)):
-            columns[i] = columns[i].strip().lower()
+            columns[i] = columns[i]
             st.dataframe(filedata[columns[i]].head(2))  # Display the first few rows of each column
             text = st.text_input(f"Enter column description for '{columns[i]}' leave it as it is to keep default and not use it feel free to delete it", value=columns[i])
             st.markdown("---")  # This adds a solid horizontal line in Streamlit
