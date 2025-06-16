@@ -2,6 +2,7 @@ import streamlit as st
 from mail_bulk import send_gmail_bulk_message
 from mail import send_gmail_message 
 from whatsapp import send_whatsapp_message
+from whatsapp_bulk import send_whatsapp_bulk_message
 
 st.set_page_config(
     page_title="WhatsApp Message Sender",
@@ -12,7 +13,7 @@ st.set_page_config(
 st.sidebar.title("Select your application")
 app = st.sidebar.selectbox(
     "Select Application",
-    options=["WhatsApp", "GMail","GmailBulk"],
+    options=["WhatsApp", "GMail","GmailBulk", "WhatsAppBulk"],
     index=0
 )
 
@@ -51,3 +52,6 @@ elif app == "GMail":
 
 elif app == "GmailBulk":
     send_gmail_bulk_message()
+
+elif app == "WhatsAppBulk":
+    send_whatsapp_bulk_message()
