@@ -1,6 +1,7 @@
 import streamlit as st
 import time
 from whats.whatsutils import send_whatsapp_message as sendmsg
+from whats.whatsutils import send_whatsapp_img as sendimg
 import pandas as pd
 from selenium import webdriver
 
@@ -98,7 +99,7 @@ def send_whatsapp_bulk_message():
                 webd.get("https://web.whatsapp.com")
                 webd.maximize_window()
                 webd.implicitly_wait(100)
-                time.sleep(10)
+                time.sleep(15)
                 browsertime = time.time()
                 for _, row in filedata.iterrows():
                     totalcount += 1
@@ -113,7 +114,9 @@ def send_whatsapp_bulk_message():
                             if key in row:
                                 personalized_message = personalized_message.replace(f'{{{value}}}', str(row[key]))
 
-                    if sendmsg(webd, recipient_phone, personalized_message):
+                    if sendimg(webd, recipient_phone, personalized_message):
+
+                    # if sendimg(webd, recipient_phone):
                         st.success(f"Message sent to {recipient_phone}.")
                     else:
                         st.error(f"Failed to send message to {recipient_phone}.")
