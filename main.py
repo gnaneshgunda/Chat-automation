@@ -5,6 +5,8 @@ import time
 from PIL import Image
 import os
 
+
+
 st.set_page_config(
     page_title="WhatsApp Message Sender",
     page_icon="📱",
@@ -56,6 +58,7 @@ app = st.sidebar.selectbox(
 
 # 
 
+# 
 def send_whatsapp_message():
     st.title("📤 WhatsApp Message Sender")
     st.info("📱 Make sure WhatsApp Web is logged in on your default browser before sending messages.")
@@ -82,17 +85,31 @@ def send_whatsapp_message():
     # Process phone numbers
     numbers_list = [num.strip() for num in input_numbers.splitlines() if num.strip()]
 
-    # Image upload
+    # Image upload - FIXED
     uploaded_file = st.file_uploader("Upload an Image (optional)", type=["jpg", "jpeg", "png"])
     img_temp_path = None
     if uploaded_file is not None:
+        # Read the file content first
+        file_bytes = uploaded_file.read()
+        
+        # Create image from bytes for display
         image = Image.open(uploaded_file)
         st.image(image, caption="Uploaded Image", use_column_width=True)
 
-        # Save to temporary path
-        img_temp_path = "temp_uploaded_image.jpg"
+        # Save to temporary path using the original file bytes
+        import time as time_module
+        timestamp = int(time_module.time())
+        img_temp_path = f"temp_uploaded_image_{timestamp}.jpg"
+        
+        # Reset file pointer and save
+        uploaded_file.seek(0)
         with open(img_temp_path, "wb") as f:
             f.write(uploaded_file.read())
+            
+        # Alternative method - save using PIL
+        # uploaded_file.seek(0)
+        # image = Image.open(uploaded_file)
+        # image.save(img_temp_path, "JPEG")
 
     # Show parsed numbers
     if numbers_list:
@@ -131,17 +148,21 @@ def send_whatsapp_message():
                     error_count += 1
                     continue
 
+                # Verify image file exists and is readable
+                if img_temp_path and not os.path.exists(img_temp_path):
+                    st.error(f"❌ Image file not found: {img_temp_path}")
+                    error_count += 1
+                    continue
+
                 if i == 0:
                     if img_temp_path:
                         pwk.sendwhats_image(
                             receiver=number,
                             img_path=img_temp_path,
                             caption=message,
-                            # time_hour=hour,
-                            # time_min=minute,
-                            wait_time=15,
+                            wait_time=10,  # Increased wait time
                             tab_close=True,
-                            close_time=3
+                            close_time=5   # Increased close time
                         )
                     else:
                         pwk.sendwhatmsg(
@@ -149,9 +170,9 @@ def send_whatsapp_message():
                             message=message,
                             time_hour=hour,
                             time_min=minute,
-                            wait_time=15,
+                            wait_time=10,
                             tab_close=True,
-                            close_time=3
+                            close_time=5
                         )
                 else:
                     if img_temp_path:
@@ -159,24 +180,24 @@ def send_whatsapp_message():
                             receiver=number,
                             img_path=img_temp_path,
                             caption=message,
-                            wait_time=15,
+                            wait_time=10,
                             tab_close=True,
-                            close_time=3
+                            close_time=5
                         )
                     else:
                         pwk.sendwhatmsg_instantly(
                             phone_no=number,
                             message=message,
-                            wait_time=15,
+                            wait_time=10,
                             tab_close=True,
-                            close_time=3
+                            close_time=5
                         )
 
                 st.success(f"✅ Message sent/scheduled to {number}")
                 success_count += 1
 
                 if i < len(numbers_list) - 1:
-                    time.sleep(2)
+                    time.sleep(3)  # Increased delay between messages
 
             except Exception as e:
                 st.error(f"❌ Error sending to {number}: {str(e)}")
@@ -194,9 +215,11 @@ def send_whatsapp_message():
 
         # Cleanup
         if img_temp_path and os.path.exists(img_temp_path):
-            os.remove(img_temp_path)
-            st.info("🧹 Temporary image file deleted.")
-
+            try:
+                os.remove(img_temp_path)
+                st.info("🧹 Temporary image file deleted.")
+            except Exception as e:
+                st.warning(f"⚠️ Could not delete temp file: {e}")
 # Add sidebar with instructions
     with st.sidebar:
         st.header("📋 Instructions")
