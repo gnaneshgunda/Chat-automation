@@ -156,7 +156,7 @@ def send_whatsapp_message():
                 else:
                     if img_temp_path:
                         pwk.sendwhats_image(
-                            phone_no=number,
+                            receiver=number,
                             img_path=img_temp_path,
                             caption=message,
                             wait_time=15,
