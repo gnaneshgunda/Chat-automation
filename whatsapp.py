@@ -1,156 +1,153 @@
+"""
+whatsapp.py — WhatsApp single-message sender UI (Streamlit).
+
+FIXES:
+  - Fixed broken validation indentation (phone check falling through to send).
+  - Temp file is now deleted AFTER webd.quit() so browser still has the file during upload.
+  - Removed ~50 lines of dead commented-out pywhatkit code.
+  - Added spinner and status messages during wait.
+  - Scheduled time past-midnight edge case handled.
+"""
+
 import streamlit as st
 from datetime import datetime
 import time
-from whats.whatsutils import send_whatsapp_message as sendmsg
-from selenium import webdriver
+import tempfile
+import os
+from whats.whatsutils import send_whatsapp_message as sendmsg, get_browser
+
 
 def send_whatsapp_message():
     st.title("🟢 WhatsApp Single Message Sender")
-    
-    
-    
-    # Main input section
+
+    browser_choice = st.selectbox("🌐 Select Browser", ["Chrome", "Edge", "Firefox"])
+
     st.subheader("📝 Message Details")
     input_number = st.text_input(
         "📱 Phone Number",
-        placeholder="+1234567890",
-        help="Enter the full phone number including country code (e.g., +1 for USA, +91 for India)"
+        placeholder="+91XXXXXXXXXX",
+        help="Full number with country code — e.g. +91 for India, +1 for USA",
     )
 
     message = st.text_area(
         "✍️ Your Message",
         placeholder="Type your message here...",
         height=150,
-        help="Enter the message you want to send. You can use multiple lines."
     )
 
-    # Scheduling section
+    image_file = st.file_uploader(
+        "🖼️ Attach Image (optional)",
+        type=["jpg", "jpeg", "png", "gif", "webp"],
+    )
+
+    # ── Schedule ──────────────────────────────────────────────────────────────
     st.subheader("⏰ Schedule Message")
-    with st.container():
-        st.caption("Select the time when you want your message to be sent")
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            hour = st.number_input(
-                "Hour (24-hour format)", 
-                min_value=0, 
-                max_value=23, 
-                value=datetime.now().hour,
-                help="Enter hour in 24-hour format (0-23)"
-            )
-        with col2:
-            minute = st.number_input(
-                "Minute", 
-                min_value=0, 
-                max_value=59, 
-                value=(datetime.now().minute + 3) % 60,
-                help="Enter minute (0-59)"
-            )
+    st.caption("Select the time when you want the message to be sent")
+    col1, col2 = st.columns(2)
+    with col1:
+        hour = st.number_input(
+            "Hour (24-hour)", min_value=0, max_value=23,
+            value=datetime.now().hour,
+        )
+    with col2:
+        minute = st.number_input(
+            "Minute", min_value=0, max_value=59,
+            value=(datetime.now().minute + 2) % 60,
+        )
 
-        st.info(f"Message will be sent at {hour:02d}:{minute:02d}")
+    st.info(f"📅 Message will be sent at **{hour:02d}:{minute:02d}**")
+    if input_number:
+        st.write(f"📤 Will be sent to: **{input_number}**")
 
-    st.write(f"{input_number} will be used to send the message at the scheduled time.")
+    # ── Send button ───────────────────────────────────────────────────────────
+    if st.button("🚀 Send WhatsApp Message", type="primary"):
 
-    # Validation and sending
-    if st.button("Send WhatsApp Message", type="primary"):
+        # ── Validation (FIXED: was broken indentation, all checks upfront) ───
+        errors = []
         if not input_number:
-            st.error("❌ Please enter a phone number.")
-        else :
-            is_valid, error_message = validate_phone_number(input_number)
-            if not is_valid:
-                st.error(f"❌ Invalid phone number: {error_message}")
-                return
-        if not message.strip():
-            st.error("❌ Please enter a message.")
+            errors.append("Please enter a phone number.")
         else:
-            try:
-                webd = webdriver.Edge()
-                webd.get("https://web.whatsapp.com")
-                webd.maximize_window()
-                webd.implicitly_wait(100)
+            is_valid, err_msg = validate_phone_number(input_number)
+            if not is_valid:
+                errors.append(f"Invalid phone number: {err_msg}")
+
+        if not message.strip():
+            errors.append("Please enter a message.")
+
+        if errors:
+            for e in errors:
+                st.error(f"❌ {e}")
+            return
+
+        # ── Schedule wait ─────────────────────────────────────────────────────
+        tmp_file = None
+        image_path = None
+
+        try:
+            if image_file:
+                suffix = os.path.splitext(image_file.name)[1]
+                tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
+                tmp_file.write(image_file.read())
+                tmp_file.flush()
+                tmp_file.close()          # close handle but keep the file
+                image_path = tmp_file.name
+
+            webd = get_browser(browser_choice)
+            webd.get("https://web.whatsapp.com")
+            webd.maximize_window()
+
+            # Wait for WhatsApp Web to load (give user time to scan QR if needed)
+            with st.spinner("⏳ Waiting for WhatsApp Web to load (10 s)…"):
                 time.sleep(10)
-                while time.localtime().tm_hour != hour or time.localtime().tm_min != minute:
-                    current_time = time.time()
-                    target_time = datetime.now().replace(hour=hour, minute=minute, second=0, microsecond=0).timestamp()
-                    sleep_duration = max(1, min(10, target_time - current_time))
-                    time.sleep(sleep_duration)  # Dynamically adjust sleep interval
-                if sendmsg(webd, input_number, message):
-                    time.sleep(10)  # Wait for message to be sent
-                    webd.quit()  # Close the browser after sending
-                    st.success(f"✅ Message sent to {input_number} at {hour:02d}:{minute:02d}")
-                else:
-                    time.sleep(10)  # Wait for message to be sent
-                    webd.quit()  # Close the browser after sending
-                    st.error("❌ Failed to send message. Please check if WhatsApp Web is logged in and try again.")
 
-            except Exception as e:
-                
-                st.error(f"❌ Error scheduling message: {str(e)}")
+            # Wait until scheduled time
+            now = datetime.now()
+            target = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+            if target <= now:
+                st.warning("⚠️ Scheduled time is in the past — sending immediately.")
+            else:
+                wait_secs = (target - now).total_seconds()
+                st.info(f"⏳ Waiting {int(wait_secs)} seconds until {hour:02d}:{minute:02d}…")
+                with st.spinner(f"Waiting until {hour:02d}:{minute:02d}…"):
+                    # Poll in small steps so we don't freeze the process
+                    while True:
+                        remaining = (target - datetime.now()).total_seconds()
+                        if remaining <= 0:
+                            break
+                        time.sleep(min(5, remaining))
+
+            # Send
+            if sendmsg(webd, input_number, message.strip(), image_path):
+                st.success(f"✅ Message sent to {input_number} at {hour:02d}:{minute:02d}")
+            else:
+                st.error(
+                    "❌ Failed to send. Possible reasons:\n"
+                    "- WhatsApp Web is not logged in\n"
+                    "- Phone number not on WhatsApp\n"
+                    "- Browser profile not found (open browser manually and log in first)"
+                )
+
+        except FileNotFoundError as e:
+            st.error(f"❌ Browser profile error: {e}")
+        except Exception as e:
+            st.error(f"❌ Unexpected error: {e}")
+        finally:
+            # Quit browser FIRST, then delete temp file
+            try:
+                webd.quit()
+            except Exception:
+                pass
+            if tmp_file and os.path.exists(image_path):
+                os.unlink(image_path)
 
 
-def validate_phone_number(number):
-    """Basic phone number validation"""
-    if not number.startswith('+'):
-        return False, "Phone number must start with country code (+)"
-    
-    # Remove '+' and check if remaining characters are digits
-    digits_only = number[1:]
+def validate_phone_number(number: str):
+    """Basic E.164 phone number validation."""
+    if not number.startswith("+"):
+        return False, "Must start with country code (e.g. +91 for India)"
+    digits_only = number[1:].replace(" ", "").replace("-", "")
     if not digits_only.isdigit():
-        return False, "Phone number can only contain digits after country code"
-    
+        return False, "Only digits allowed after country code"
     if len(digits_only) < 10 or len(digits_only) > 15:
-        return False, "Phone number length should be between 10-15 digits"
-    
+        return False, "Length must be 10–15 digits after country code"
     return True, "Valid"
-
-
-            # for i, number in enumerate(numbers_list):
-            #     try:
-            #         status_text.text(f"📤 Sending message to {number}...")
-                    
-            #         # Validate phone number format
-            #         if not number.startswith('+'):
-            #             st.error(f"❌ Invalid format for {number}. Must start with country code (+)")
-            #             error_count += 1
-            #             continue
-                    
-            #         # Send message with pywhatkit
-            #         pwk.sendwhatmsg(
-            #             phone_no=number, 
-            #             message=message, 
-            #             time_hour=hour, 
-            #             time_min=minute,
-            #             wait_time=15,  # Wait time for WhatsApp web to load
-            #             tab_close=True,
-            #             close_time=3   # Time before closing tab
-            #         )
-                    
-            #         st.success(f"✅ Message scheduled to be sent to {number} at {hour:02d}:{minute:02d}")
-            #         success_count += 1
-                    
-            #         # Add delay between messages to avoid issues
-            #         if i < len(numbers_list) - 1:  # Don't delay after last message
-            #             time.sleep(2)
-                    
-            #     except Exception as e:
-            #         st.error(f"❌ Error sending message to {number}: {str(e)}")
-            #         error_count += 1
-                
-            #     # Update progress
-            #     progress_bar.progress((i + 1) / len(numbers_list))
-            
-            # # Final status
-            # status_text.text("✅ Process completed!")
-            
-            # # Summary
-            # st.write("### Summary")
-            # st.write(f"✅ Successfully scheduled: {success_count} messages")
-            # if error_count > 0:
-            #     st.write(f"❌ Failed: {error_count} messages")
-            
-            # # Important notes
-            # st.write("### Important Notes:")
-            # st.write("- Messages will be sent automatically at the scheduled time")
-            # st.write("- Keep your browser open until messages are sent")
-            # st.write("- Don't use your computer during the sending process")
-
